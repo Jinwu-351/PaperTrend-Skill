@@ -32,6 +32,11 @@ import json
 import importlib.util
 from pathlib import Path
 
+# Ensure UTF-8 output on Windows
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+
 
 def has_module(name: str) -> bool:
     try:

@@ -12,6 +12,11 @@ import json
 import sys
 from pathlib import Path
 
+# Ensure UTF-8 output on Windows
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+
 
 def check_user_confirmed(data_dir: Path):
     """检查 Stage 1 的 demand.json 是否已被用户确认。

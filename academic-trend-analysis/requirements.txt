@@ -1,6 +1,5 @@
 # Academic Trend Analysis Skill — 依赖清单
 #
-# 开发环境: conda activate agno
 # 安装方式: pip install -r academic-trend-analysis/requirements.txt
 #
 # 两种检索模式的依赖独立，按需安装：

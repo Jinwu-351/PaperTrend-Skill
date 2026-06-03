@@ -268,15 +268,38 @@ academic-trend-analysis/
 
 ## 依赖
 
-**默认使用（BM25 模式）**：
+Python 3.10+ 环境。依赖按模式分离，按需安装：
+
+### BM25 模式（默认，零配置）
+
+仅需 `requests`，使用关键词 BM25 匹配，适合大多数场景：
+
 ```bash
-pip install requests
+pip install -r academic-trend-analysis/requirements.txt
+# 或单独安装: pip install requests
 ```
 
-**可选升级（Milvus 模式）**：
+### Milvus 向量检索模式（可选）
+
+需要额外的向量检索依赖，适合追求深度语义召回的场景：
+
 ```bash
 pip install pymilvus sentence-transformers
 ```
+
+此外还需下载 BGE embedding 模型到本地，通过以下方式指定路径：
+
+```bash
+# 方式 1: 命令行参数
+python scripts/stage3_store.py <data_dir> --embedding-model /path/to/bge-large-zh-v1.5
+
+# 方式 2: 环境变量
+set EMBEDDING_MODEL_PATH=C:\models\bge-large-zh-v1.5
+```
+
+推荐模型：[BAAI/bge-large-zh-v1.5](https://huggingface.co/BAAI/bge-large-zh-v1.5)（1024 维）
+
+> **Windows 用户注意**：如果 `python` 或 `pip` 不在 PATH 中，请使用 `python -m pip install ...` 或在 Anaconda/Miniconda 环境中安装。本 Skill 开发环境为 `conda activate agno`，但不强制依赖 conda。
 
 ---
 

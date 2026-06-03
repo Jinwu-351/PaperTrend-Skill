@@ -9,6 +9,11 @@ import json
 import re
 import sys
 from pathlib import Path
+
+# Ensure UTF-8 output on Windows
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
 from typing import Dict, List, Tuple
 
 # 将 scripts 目录加入路径以加载 _guard

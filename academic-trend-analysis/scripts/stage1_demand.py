@@ -34,6 +34,11 @@ import json
 from datetime import datetime
 from pathlib import Path
 
+# Ensure UTF-8 output on Windows
+if sys.platform == 'win32':
+    sys.stdout.reconfigure(encoding='utf-8')
+    sys.stderr.reconfigure(encoding='utf-8')
+
 # 将 lib 目录加入路径
 script_dir = Path(__file__).resolve().parent
 lib_dir = script_dir.parent / "lib"
