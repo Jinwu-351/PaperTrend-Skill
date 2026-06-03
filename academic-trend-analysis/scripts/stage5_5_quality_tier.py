@@ -170,11 +170,11 @@ def run_quality_tier(data_dir: Path) -> Dict:
     supplement_papers = []
 
     if core_path.exists():
-        with open(core_path) as f:
+        with open(core_path, encoding='utf-8') as f:
             core_papers = json.load(f)
 
     if supp_path.exists():
-        with open(supp_path) as f:
+        with open(supp_path, encoding='utf-8') as f:
             supplement_papers = json.load(f)
 
     all_papers = core_papers + supplement_papers
