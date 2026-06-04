@@ -311,8 +311,7 @@ def build_trend_prompt(user_query: str, core_papers: List[Dict],
 def save_report(data_dir: Path, report_content: str, all_papers: List[Dict]) -> Path:
     """保存报告并自动追加 GB/T 7714 参考文献
 
-    参考文献包含所有论文（core + supplement），保留原始编号，
-    确保正文中的 [N] 与参考文献条目一一对应。
+    仅包含正文中实际引用的论文，并将 [N] 重映射为连续编号。
 
     Args:
         data_dir: session 数据目录
@@ -323,16 +322,24 @@ def save_report(data_dir: Path, report_content: str, all_papers: List[Dict]) -> 
         报告文件路径
     """
     # 提取正文中所有 [N] 引用
-    cited_indices = set(_extract_citation_indices(report_content))
+    cited_indices = _extract_citation_indices(report_content)
+    cited_set = set(cited_indices)
 
-    # 生成参考文献：包含所有论文，保留原始编号
+    # 构建重映射表：原始编号 → 连续编号
+    remap = {old: new for new, old in enumerate(cited_indices, 1)}
+
+    # 重映射正文中的引用编号
+    report_content = _remap_citations(report_content, remap)
+
+    # 生成参考文献：仅包含被引用的论文，使用连续编号
     bib_lines = ["\n---\n", "## 参考文献\n"]
     for i, paper in enumerate(all_papers, 1):
         if not isinstance(paper, dict):
             continue
-        entry = _format_bibliography_entry(i, paper)
-        marker = "  # 未在正文中引用" if i not in cited_indices else ""
-        bib_lines.append(entry + marker)
+        if i not in cited_set:
+            continue
+        entry = _format_bibliography_entry(remap[i], paper)
+        bib_lines.append(entry)
         bib_lines.append("")
 
     report_content += "\n" + "\n".join(bib_lines)
@@ -344,6 +351,38 @@ def save_report(data_dir: Path, report_content: str, all_papers: List[Dict]) -> 
         f.write(report_content)
 
     return report_path
+
+
+def _remap_citations(text: str, remap: Dict[int, int]) -> str:
+    """将正文中的 [N] 引用按 remap 表重映射为新编号。
+
+    跳过两类不替换：
+    - GB/T 7714 参考文献行（已在保存阶段，不应被替换）
+    - Markdown 图片/链接: [text](url)
+    """
+    bib_pattern = re.compile(r'^\s*\[\d+\]\s+.*\[[JCMR]\]\.')
+    lines = text.split('\n')
+    remapped = []
+    for line in lines:
+        if bib_pattern.match(line):
+            remapped.append(line)
+            continue
+        # 从后往前替换，避免偏移问题
+        matches = list(re.finditer(r'\[(\d+)\]', line))
+        if not matches:
+            remapped.append(line)
+            continue
+        new_line = line
+        for m in reversed(matches):
+            # 跳过 Markdown 链接
+            rest = new_line[m.end():m.end() + 1]
+            if rest == '(':
+                continue
+            old_num = int(m.group(1))
+            if old_num in remap:
+                new_line = new_line[:m.start()] + f"[{remap[old_num]}]" + new_line[m.end():]
+        remapped.append(new_line)
+    return '\n'.join(remapped)
 
 
 def _extract_citation_indices(text: str) -> list:

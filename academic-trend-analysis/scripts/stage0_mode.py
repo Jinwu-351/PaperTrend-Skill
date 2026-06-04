@@ -127,7 +127,7 @@ def decide(checks, existing_collections):
     return available, recommended, reasons
 
 
-def print_human_report(result):
+def print_human_report(result, data_hint_dir):
     print("=" * 60)
     print("Stage 0: 环境探测 & 模式推荐")
     print("=" * 60)
@@ -147,6 +147,7 @@ def print_human_report(result):
             print(f"        已有 collections: {r['existing_collections']}")
 
     print(f"\n💡 推荐模式: {result['recommended']}")
+    print(f"📁 数据目录: {data_hint_dir}")
     print("\n请向用户确认模式后，使用以下命令进入 Stage 1:")
     print(f"  python academic-trend-analysis/scripts/stage1_demand.py \"<query>\" <data_dir> --mode {result['recommended']}")
     print("=" * 60)
@@ -156,7 +157,14 @@ def main():
     project_root = Path.cwd()
     as_json = "--json" in sys.argv
 
-    # 允许指定 data_dir 仅用于显示；本 stage 不写文件
+    # --base_dir 指定数据存放根目录，默认为当前工作目录
+    base_dir = project_root
+    if "--base_dir" in sys.argv:
+        idx = sys.argv.index("--base_dir")
+        if idx + 1 < len(sys.argv):
+            base_dir = Path(sys.argv[idx + 1])
+
+    # --data_dir 指定完整数据目录路径（优先级高于 --base_dir）
     data_dir = None
     if "--data_dir" in sys.argv:
         idx = sys.argv.index("--data_dir")
@@ -171,14 +179,15 @@ def main():
         "recommended": recommended,
         "reasons": reasons,
         "checks": checks,
+        "base_dir": str(base_dir),
     }
     if data_dir:
-        result["data_dir_hint"] = str(data_dir)
+        result["data_dir"] = str(data_dir)
 
     if as_json:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
-        print_human_report(result)
+        print_human_report(result, data_dir or (base_dir / "data"))
 
 
 if __name__ == "__main__":

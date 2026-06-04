@@ -23,7 +23,7 @@ description: |
 > |---|--------|---------|---------|---------|
 > | 1 | **Stage 0 模式选择** | 环境探测完成后 | 四合一组合选择（检索 + 对话） | 拿到选择后进入 Milvus 路径确认（如需要） |
 > | 2 | **Stage 1 内部** | WebSearch 完成后 | 按对话模式展开对话（标准 5 层 / 快速 1-2 轮） | 拿到回复后构建 demand.json |
-> | 3 | **Stage 1 → 2** | demand.json 生成后 | 展示内容，等用户说「继续」/「confirm」 | 用户确认后运行 `stage1_demand.py ... --confirm` 设置 `user_confirmed: true` |
+> | 3 | **Stage 1 → 2** | demand.json 生成后 | 展示内容，等用户说「继续」/「confirm」 | 用户确认后运行 `stage1_demand.py --only-confirm <data_dir>` 设置 `user_confirmed: true` |
 > | 4 | **Stage 8 后** | 用户要求修订时 | 收集具体修订请求 | 重新执行 Stage 6-8（max 2 轮） |
 >
 > **Stage 2-8 全部自动执行**，每步完成后展示结果即可，不需等待。
@@ -146,7 +146,11 @@ START
 ```bash
 python academic-trend-analysis/scripts/stage0_mode.py            # 人类可读报告
 python academic-trend-analysis/scripts/stage0_mode.py --json     # JSON 结构（程序化）
+python academic-trend-analysis/scripts/stage0_mode.py --base_dir /path/to/project  # 指定数据存放根目录
 ```
+
+> `--base_dir` 默认为当前工作目录（即 `pwd`），所有数据将存放在 `<base_dir>/data/<timestamp>/` 下。
+> 也可直接传入 `--data_dir /完整/路径` 指定完整数据目录。
 
 输出包含：
 - 当前环境是否安装 `pymilvus` / `sentence-transformers`

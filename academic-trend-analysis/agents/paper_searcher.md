@@ -55,3 +55,11 @@ save_papers(data_dir, deduped_papers)
 - 每源每关键词 ≤ 25 篇
 - 搜索完成后必须执行去重
 - 确认搜索统计后再继续
+
+## Timeout & Retry
+
+论文多源搜索（arXiv + Semantic Scholar + OpenAlex + AlphaXiv）涉及大量 HTTP 请求，查询时间可能较长。
+
+- **推荐单次搜索超时阈值**: 12 分钟
+- **推荐重试次数**: 超时后自动重试 1 次
+- 如两次均超时，使用已完成的关键词搜索结果继续进行去重，并向用户报告失败的关键词
