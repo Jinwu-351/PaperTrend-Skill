@@ -218,6 +218,17 @@ def build_trend_prompt(user_query: str, core_papers: List[Dict],
     if core_concepts:
         lines.append(f"**该领域核心研究方向**（供聚类参考）：{', '.join(core_concepts)}")
     lines.append("")
+
+    # 报告模板 — 放在最前面确保 LLM 注意
+    template_path = Path(__file__).resolve().parent.parent / "templates" / "report_template.md"
+    if template_path.exists():
+        with open(template_path, 'r', encoding='utf-8') as f:
+            template_content = f.read()
+        lines.append("**报告结构模板**：严格按照以下模板结构撰写报告（{{...}} 为占位符，请根据论文摘要填充实际内容）：")
+        lines.append("")
+        lines.append(template_content)
+        lines.append("")
+
     lines.append("**Constraints (约束条件)**")
     lines.append("")
     lines.append("### 证据层级（Evidence Hierarchy）")
@@ -291,44 +302,6 @@ def build_trend_prompt(user_query: str, core_papers: List[Dict],
         lines.append(f"作者: {author_str}")
         lines.append(f"发表时间: {published}")
 
-    # 报告模板 — 从文件加载
-    template_path = Path(__file__).resolve().parent.parent / "templates" / "report_template.md"
-    if template_path.exists():
-        with open(template_path, 'r', encoding='utf-8') as f:
-            template_content = f.read()
-        lines.append("")
-        lines.append("# Output Template")
-        lines.append("按照以下模板结构生成报告（{{...}} 为占位符，请根据论文摘要填充实际内容）：")
-        lines.append("")
-        lines.append(template_content)
-    else:
-        # Fallback 到内置模板（模板文件缺失时）
-        lines.append("")
-        lines.append("# Output Template")
-        lines.append("按照以下结构生成报告：")
-        lines.append("")
-        lines.append("## 1. 概述与背景")
-        lines.append(f"- 研究问题、时间范围、论文覆盖情况")
-        lines.append("")
-        lines.append("## 2. 核心方法与技术路线")
-        lines.append(f"- 按方法/问题聚类（非按应用领域）")
-        lines.append(f"- 每个方向标注论文数量、代表性工作")
-        lines.append("")
-        lines.append("## 3. 关键进展与突破")
-        lines.append(f"- 核心方法论演进")
-        lines.append(f"- 从核心方法论文中提炼")
-        lines.append("")
-        lines.append("## 4. 负趋势分析")
-        lines.append(f"- 哪些问题长期未解决")
-        lines.append(f"- 哪些方向论文数量减少或停滞")
-        lines.append(f"- 为什么某些方向没有成为主流")
-        lines.append("")
-        lines.append("## 5. 未来方向与开放挑战")
-        lines.append(f"- 每个挑战必须有论文引用支持")
-        lines.append("")
-        lines.append("## 6. 参考文献")
-        lines.append(f"- 由 save_report 工具自动追加 GB/T 7714 格式")
-
     lines.append("")
     lines.append("请生成趋势总结报告:")
 
@@ -337,6 +310,9 @@ def build_trend_prompt(user_query: str, core_papers: List[Dict],
 
 def save_report(data_dir: Path, report_content: str, all_papers: List[Dict]) -> Path:
     """保存报告并自动追加 GB/T 7714 参考文献
+
+    参考文献包含所有论文（core + supplement），保留原始编号，
+    确保正文中的 [N] 与参考文献条目一一对应。
 
     Args:
         data_dir: session 数据目录
@@ -347,34 +323,19 @@ def save_report(data_dir: Path, report_content: str, all_papers: List[Dict]) -> 
         报告文件路径
     """
     # 提取正文中所有 [N] 引用
-    cited_indices = _extract_citation_indices(report_content)
+    cited_indices = set(_extract_citation_indices(report_content))
 
-    if cited_indices:
-        # 重映射引用编号
-        old_to_new = {old: new for new, old in enumerate(cited_indices, 1)}
-        cited_papers = [all_papers[idx - 1] for idx in cited_indices
-                        if 1 <= idx <= len(all_papers) and isinstance(all_papers[idx - 1], dict)]
+    # 生成参考文献：包含所有论文，保留原始编号
+    bib_lines = ["\n---\n", "## 参考文献\n"]
+    for i, paper in enumerate(all_papers, 1):
+        if not isinstance(paper, dict):
+            continue
+        entry = _format_bibliography_entry(i, paper)
+        marker = "  # 未在正文中引用" if i not in cited_indices else ""
+        bib_lines.append(entry + marker)
+        bib_lines.append("")
 
-        def _replace(m):
-            old = int(m.group(1))
-            new = old_to_new.get(old)
-            return f'[{new}]' if new is not None else m.group(0)
-
-        report_content = re.sub(r'(?<!\[)\[(\d+)\](?!\()', _replace, report_content)
-
-        # 追加参考文献
-        bib_lines = ["\n---\n", "## 参考文献\n"]
-        for i, paper in enumerate(cited_papers, 1):
-            bib_lines.append(_format_bibliography_entry(i, paper))
-            bib_lines.append("")
-        report_content += "\n" + "\n".join(bib_lines)
-    else:
-        # 无引用标记，追加全部
-        bib_lines = ["\n---\n", "## 参考文献\n"]
-        for i, paper in enumerate(all_papers, 1):
-            bib_lines.append(_format_bibliography_entry(i, paper))
-            bib_lines.append("")
-        report_content += "\n" + "\n".join(bib_lines)
+    report_content += "\n" + "\n".join(bib_lines)
 
     # 保存
     report_path = data_dir / "report.md"
@@ -386,14 +347,18 @@ def save_report(data_dir: Path, report_content: str, all_papers: List[Dict]) -> 
 
 
 def _extract_citation_indices(text: str) -> list:
+    """提取正文中所有 [N] 引用的编号。
+
+    跳过两类误报：
+    - GB/T 7714 参考文献行: [1] Author. Title...
+    - Markdown 图片/链接: [text](url) 中的数字
+    """
     cited = set()
+    # 只匹配已生成的 GB/T 7714 行（含文献类型标记 [J]/[C]/[M]/[R]）
+    bib_pattern = re.compile(r'^\s*\[\d+\]\s+.*\[[JCMR]\]\.')
+
     for line in text.split('\n'):
-        s = line.lstrip()
-        if s.startswith('#'):
-            continue
-        if s.startswith('[') and re.match(r'^\[\d+\]', s):
-            continue
-        if re.match(r'^\|?\s*\[\d+\]', s):
+        if bib_pattern.match(line):
             continue
         for m in re.finditer(r'\[(\d+)\]', line):
             rest = line[m.end():m.end() + 1]

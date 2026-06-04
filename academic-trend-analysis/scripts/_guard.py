@@ -52,3 +52,29 @@ def check_user_confirmed(data_dir: Path):
 
     # 通过校验，静默继续
     return True
+
+
+def check_report_revision_allowed(data_dir: Path) -> bool:
+    """检查报告修订是否超过上限（2 轮）。
+
+    未超限时静默返回 True；超限时打印错误信息并返回 False。
+    """
+    demand_path = data_dir / "demand.json"
+    if not demand_path.exists():
+        return True  # 没有 demand.json，让正常流程处理
+
+    with open(demand_path, 'r', encoding='utf-8') as f:
+        demand = json.load(f)
+
+    revision_count = demand.get("revision_count", 0)
+    max_revisions = 2
+
+    if revision_count >= max_revisions:
+        print(f"\n{'='*60}")
+        print(f"🛑 GUARD: 报告修订已达上限（{max_revisions} 轮）！")
+        print(f"   当前 revision_count = {revision_count}")
+        print(f"   剩余问题将列入 'Acknowledged Limitations' 章节。")
+        print(f"{'='*60}\n")
+        return False
+
+    return True

@@ -184,3 +184,21 @@ report_path = save_report(data_dir, report_content, all_papers)
 - **L3 推断必须标注 [推断]，且不得附引用编号**
 - **跨论文方法比较除非有原文直接对比，否则必须标注 [推断]**
 - **统计数字必须附分类标准和方法论说明**
+
+## 报告修订（修订循环）
+
+报告保存为 `report.md` 后，如果用户要求修改：
+
+1. 收集具体的修订请求（章节级或要点级）
+2. 检查 `demand.json` 中的 `revision_count`（上限 2 轮）
+   - 如果 `revision_count >= 2`，向用户说明已达上限，剩余问题列入 "Acknowledged Limitations"
+   - 如果 `revision_count < 2`，继续以下步骤
+3. 重新执行 Stage 6（构建 Prompt），将修订说明追加到 prompt 末尾
+4. 重新执行 Stage 7（撰写报告），纳入修改
+5. 重新执行 Stage 8（保存报告），更新参考文献
+6. 将 `demand.json` 中的 `revision_count` 加 1
+7. 向用户展示修订后的报告路径和概要
+
+修订请求应该具体明确：
+- ✅ "扩展 2.3 节，加入更多近 2 年的论文"
+- ❌ "让它更好"

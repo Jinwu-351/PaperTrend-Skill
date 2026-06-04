@@ -1,4 +1,5 @@
 {
   "slug": "academic-trend-analysis",
-  "version": "1.0.0"
+  "version": "1.1.0",
+  "socratic_since": "1.1.0"
 }
