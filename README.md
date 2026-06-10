@@ -3,345 +3,354 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-> AI Agent 驱动的学术论文趋势分析 Skill。一句话启动调研，自动完成搜索、筛选、分析、报告生成全流程。
+> An AI Agent-powered Skill for academic paper trend analysis. Start a research survey with a single sentence — the Agent automatically handles search, filtering, analysis, and report generation end-to-end.
+
+English | [简体中文](README_zh.md)
 
 ---
 
-## 项目背景
+## Background
 
-在科研工作中，文献调研是最耗时却又最不可或缺的环节：
+In academic research, literature review is one of the most time-consuming yet indispensable steps:
 
-- **查不全**：单一数据库覆盖有限，容易遗漏重要工作
-- **去重烦**：同一篇论文在不同平台反复出现，手动去重效率低下
-- **筛选难**：从数百篇论文中找出核心文献，需要大量阅读与判断
-- **格式乱**：引用格式不统一，整理参考文献消耗大量时间
-- **洞察浅**：缺乏系统性分析框架，难以提炼真正的趋势与缺口
+- **Incomplete coverage**: A single database has limited coverage, making it easy to miss important work
+- **Tedious deduplication**: The same paper appears repeatedly across platforms, and manual deduplication is inefficient
+- **Difficult filtering**: Identifying core papers from hundreds of results requires extensive reading and judgment
+- **Inconsistent formatting**: Citation formats vary widely, and organizing references consumes significant time
+- **Superficial insights**: Without a systematic analysis framework, it's hard to extract real trends and research gaps
 
-本项目将上述流程打包为一个 **AI Agent Skill**。你只需用自然语言描述研究方向，Agent 会自动完成从需求澄清、多源搜索、去重筛选、质量分级到报告撰写的全部工作，最终输出一份带 GB/T 7714 参考文献的学术趋势分析报告。
-
----
-
-## 核心优势
-
-| 传统方式 | Academic Trend Analysis |
-|---------|------------------------|
-| 手动逐个数据库检索 | 一次搜索覆盖 arXiv、Semantic Scholar、OpenAlex、AlphaXiv 四源 |
-| 人工比对去重 | 自动 DOI + 标题归一化 + arXiv ID 三重去重 |
-| 凭经验筛选核心文献 | BM25 相关性排序 + 标题匹配加权，客观量化 |
-| 难以判断文献质量 | 自动 T1/T2/T3 三级质量标注，预印本与顶会一目了然 |
-| 参考文献格式混乱 | 自动提取引用、重映射连续编号、追加 GB/T 7714 标准格式 |
-| 报告结构凭感觉 | 8 段式标准模板：背景→方法聚类→核心成果→负趋势→未来方向→结论 |
-
-**关键设计**：
-
-- **零配置即可用**：默认 BM25 模式仅需 `requests`，无需 GPU、无需向量数据库
-- **人在回路**：仅在模式选择、需求确认阶段暂停提问，确认后一次性自动跑完全流程
-- **自包含可审计**：每步中间结果（搜索列表、核心论文、质量分级）均持久化到本地，随时可追溯
-- **缺口分析驱动**：关键词生成前强制检查领域主流方向覆盖度，避免调研盲区
-- **苏格拉底对话**：标准模式下通过 5 层深度对话（范围界定→维度选择→证据标准→偏差意识→贡献阐述）精准定位分析需求
+This project packages the entire workflow into an **AI Agent Skill**. Simply describe your research direction in natural language, and the Agent will handle everything from requirement clarification, multi-source search, deduplication, quality grading, to report writing — ultimately producing an academic trend analysis report with GB/T 7714 formatted references.
 
 ---
 
-## 适用场景
+## Key Advantages
 
-### 1. 研究方向入门
+| Traditional Approach                      | Academic Trend Analysis                                                                                                       |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Manual search across databases one by one | Single search covering four sources: arXiv, Semantic Scholar, OpenAlex, AlphaXiv                                              |
+| Manual comparison for deduplication       | Automatic triple deduplication via DOI + title normalization + arXiv ID                                                       |
+| Experience-based core paper selection     | BM25 relevance ranking + title-match weighting for objective quantification                                                   |
+| Hard to judge paper quality               | Automatic T1/T2/T3 three-tier quality labeling — preprints and top conferences at a glance                                    |
+| Messy reference formatting                | Automatic citation extraction, sequential re-numbering, and GB/T 7714 standard formatting                                     |
+| Report structure by intuition             | 8-section standard template: Background → Method Clustering → Core Results → Negative Trends → Future Directions → Conclusion |
 
-刚接触一个新领域，需要快速建立全局认知：
+**Key Design Principles**:
 
-> "帮我调研一下 **NeRF 在自动驾驶中的应用** 现状"
-
-Agent 会自动搜索最新论文，筛选核心工作，生成一份涵盖方法演进、关键成果、现存问题与前景的综述报告。
-
-### 2. 项目上下文驱动的趋势分析
-
-在项目目录下使用 AI Agent 时，Agent 已经理解了你的代码结构、依赖栈和技术选型。此时触发本 Skill，调研方向会与项目实际紧密贴合：
-
-> "我们项目里用了自研的分布式训练框架，**帮我看看最近分布式深度学习训练** 有什么新进展，有没有值得借鉴的"
-
-Agent 会结合它已读到的项目代码（如 `train.py` 中的数据并行逻辑、`model.py` 的架构设计），在报告中标注：
-- 哪些新方法是项目**已经采用**的（现状对齐）
-- 哪些是**可以考虑升级**的（技术债务预警）
-- 哪些是**目前项目未涉及但相关**的（扩展机会）
-
-这比"盲搜"一个研究方向要精准得多，因为分析锚点是你的真实代码基线。
-
-### 3. 开题前的文献综述
-
-撰写学位论文或项目申请书前，需要系统性梳理领域脉络：
-
-> "分析 **扩散模型在医学图像分割** 方向的研究趋势，重点关注近两年的工作"
-
-输出报告可直接作为文献综述章节的基础框架，引用格式已按 GB/T 7714 整理好。
-
-### 4. 技术选型对比
-
-面对多个技术路线，需要了解各自的发展态势与边界：
-
-> "对比一下 **Mamba 和 Transformer 在长序列建模** 上的最新进展，各有什么优势和局限"
-
-Agent 会分别搜索两个方向的代表性工作，在报告中进行结构化对比分析。
-
-### 5. 组会前的速览
-
-下周要汇报，需要快速掌握一个子方向的动态：
-
-> "最近 **大模型推理时扩展（test-time scaling）** 有什么新进展？"
-
-30 分钟内获得一份带引用的精炼摘要，足以支撑一次高质量的组会分享。
-
-### 6. 审稿准备
-
-收到一篇论文的审稿邀请，需要了解相关工作背景：
-
-> "帮我查一下 **基于图神经网络的药物发现** 领域的关键论文，看看最近有没有突破性工作"
-
-快速定位领域内的里程碑工作与最新进展，辅助审稿判断。
-
-### 7. 跨学科交叉探索
-
-寻找本领域与其他学科的交叉机会：
-
-> "看看 **强化学习在芯片设计（EDA）** 上的应用现状"
-
-通过缺口分析自动识别该交叉领域的主流方向与未被覆盖的细分主题。
-
-### 8. 基金/项目申报
-
-需要论证某研究方向的前沿性与必要性：
-
-> "调研 **具身智能（embodied AI）在家庭服务机器人** 方向的研究动态，重点分析还有哪些技术瓶颈未解决"
-
-报告中的"负趋势分析"与"未来方向"段落可直接用于项目书的研究意义与难点阐述。
+- **Zero-config ready**: Default BM25 mode requires only `requests` — no GPU, no vector database needed
+- **Human-in-the-loop**: Pauses only for mode selection and requirement confirmation; runs the rest automatically in one shot
+- **Self-contained & auditable**: Every intermediate result (search lists, core papers, quality tiers) is persisted locally and fully traceable
+- **Gap-analysis driven**: Before generating keywords, the system强制 checks coverage of mainstream directions in the field to avoid blind spots
+- **Socratic dialogue**: In standard mode, 5-layer deep dialogue (scope → dimensions → evidence standards → bias awareness → contribution articulation) precisely pinpoints analysis needs
 
 ---
 
-## 部署方式
+## Use Cases
 
-本 Skill 支持 **Claude Code + Codex 双工具部署**。两个工具的 Skill 目录结构完全兼容，一份代码、一个入口。
+### 1. Getting Started with a New Research Direction
 
-Claude Code 和 Codex 从以下位置加载 Skill：
+New to a field and need to quickly build a global understanding:
 
-- **全局 Skills**：`~/.claude/skills/` 或 `~/.codex/skills/` — 任何项目都能触发
-- **项目 Skills**：`<project>/.claude/skills/` 或 `<project>/.codex/skills/` — 仅在该项目内可用
+> "Help me survey the current state of **NeRF applications in autonomous driving**."
 
-### 一键部署（推荐）
+The Agent automatically searches for the latest papers, filters core works, and generates a comprehensive report covering method evolution, key results, open problems, and future prospects.
 
-使用仓库根目录的 `deploy.py` 跨平台一键部署：
+### 2. Project Context-Driven Trend Analysis
+
+When using an AI Agent within your project directory, it already understands your code structure, dependency stack, and technology choices. Triggering this Skill aligns the research direction closely with your actual project:
+
+> "Our project uses a custom distributed training framework. **Help me check recent advances in distributed deep learning training** — anything worth借鉴ing."
+
+The Agent combines the project code it has already read (e.g., data parallelism logic in `train.py`, architecture design in `model.py`) and annotates in the report:
+- Which new methods your project **already adopts** (alignment check)
+- Which are **worth upgrading to** (technical debt warning)
+- Which are **not yet covered but relevant** (expansion opportunities)
+
+This is far more precise than "blind searching" a research direction, because the analysis anchors on your real codebase.
+
+### 3. Literature Review Before Thesis Proposal
+
+Before writing a thesis or grant proposal, you need a systematic review of the field:
+
+> "Analyze research trends in **diffusion models for medical image segmentation**, focusing on work from the past two years."
+
+The output report can serve directly as a foundational framework for your literature review chapter, with citations already formatted in GB/T 7714.
+
+### 4. Technology Comparison
+
+Facing multiple technical routes and need to understand each one's trajectory and boundaries:
+
+> "Compare the latest advances of **Mamba vs. Transformer in long-sequence modeling** — what are the strengths and limitations of each?"
+
+The Agent searches representative work in both directions and provides a structured comparative analysis in the report.
+
+### 5. Quick Preview Before Group Meeting
+
+Presenting next week and need to quickly catch up on a sub-direction:
+
+> "What's new in **test-time scaling for large language models**?"
+
+Get a concise, citation-backed summary within 30 minutes — enough to support a high-quality group meeting presentation.
+
+### 6. Paper Review Preparation
+
+Received a paper review invitation and need to understand the related work background:
+
+> "Help me find key papers in **graph neural networks for drug discovery** — any breakthrough work recently?"
+
+Quickly locate milestone work and latest advances in the field to support your review judgment.
+
+### 7. Cross-Disciplinary Exploration
+
+Looking for interdisciplinary opportunities between your field and others:
+
+> "Survey the current state of **reinforcement learning in chip design (EDA)**."
+
+Gap analysis automatically identifies mainstream directions and uncovered subtopics in this cross-disciplinary area.
+
+### 8. Grant / Project Proposal
+
+Need to argue the frontier significance and necessity of a research direction:
+
+> "Survey research dynamics of **embodied AI in home service robots**, focusing on which technical bottlenecks remain unsolved."
+
+The "negative trend analysis" and "future directions" sections of the report can be used directly in your proposal's significance and challenge statements.
+
+---
+
+## Deployment
+
+This Skill supports dual-tool deployment for **Claude Code + Codex**. The Skill directory structure is fully compatible between both tools — one codebase, one entry point.
+
+Claude Code and Codex load Skills from:
+
+- **Global Skills**: `~/.claude/skills/` or `~/.codex/skills/` — available in any project
+- **Project Skills**: `<project>/.claude/skills/` or `<project>/.codex/skills/` — available only within that project
+
+### One-Click Deployment (Recommended)
+
+Use `deploy.py` in the repository root for cross-platform one-click deployment:
 
 ```bash
-# 全局部署（两个工具都可用）
+# Global deployment (available in both tools)
 python deploy.py --global
 
-# 仅项目级部署
+# Project-level only
 python deploy.py --local
 
-# 预览操作，不实际执行
+# Preview actions without executing
 python deploy.py --dry-run --global
 
-# 卸载
+# Uninstall
 python deploy.py --remove
 ```
 
-平台自动适配：Linux/macOS 使用符号链接，Windows 使用目录连接（`mklink /J`）。
+Platform auto-adaptation: Linux/macOS uses symbolic links; Windows uses directory junctions (`mklink /J`).
 
-Codex 部署优先读取 `$CODEX_HOME` 环境变量，未设置时 fallback 到 `~/.codex/skills/`。
+Codex deployment first reads the `$CODEX_HOME` environment variable, falling back to `~/.codex/skills/` if not set.
 
-### 手动部署
+### Manual Deployment
 
-如需手动复制，将 `academic-trend-analysis/` 目录分别复制到目标位置：
+If you prefer to copy manually, copy the `academic-trend-analysis/` directory to the target locations:
 
 ```bash
-# 全局部署
+# Global deployment
 cp -r academic-trend-analysis ~/.claude/skills/
 cp -r academic-trend-analysis ~/.codex/skills/
 
-# 项目级部署
+# Project-level deployment
 mkdir -p .claude/skills .codex/skills
 cp -r academic-trend-analysis .claude/skills/
 cp -r academic-trend-analysis .codex/skills/
 
-# 验证
+# Verify
 ls ~/.claude/skills/academic-trend-analysis/SKILL.md
 ls ~/.codex/skills/academic-trend-analysis/SKILL.md
 ```
 
-> **区别**：全局部署一次，所有项目通用；项目部署仅对当前项目生效。一键部署使用符号链接/目录连接，源码修改即时生效，无需重复部署。
+> **Difference**: Global deployment is one-time and applies to all projects; project deployment only affects the current project. One-click deployment uses symbolic links / directory junctions, so source code changes take effect immediately without re-deployment.
 
 ---
 
-## 使用方式
+## Usage
 
-### 自然语言触发
+### Natural Language Trigger
 
-无需记忆命令，直接用日常语言描述需求：
-
-```
-分析 X 的趋势
-X 领域的论文调研
-X 方向的研究动态
-帮我搜索 X 相关的论文并生成综述
-```
-
-触发词包括：趋势、前沿、热点、论文调研、文献综述、research trend、academic survey、paper search、领域分析、research landscape、literature review。
-
-### 交互流程
-
-整个流程分为 **5 个人工确认点 + 全自动阶段**：
+No commands to memorize — just describe your need in everyday language:
 
 ```
-你: "分析 hierarchical reinforcement learning 的趋势"
-    │
-    ▼
+Analyze the trend of X
+Survey papers in the field of X
+Research landscape of direction X
+Help me search for papers on X and generate a survey
+```
+
+Trigger keywords include: 趋势, 前沿, 热点, 论文调研, 文献综述, research trend, academic survey, paper search, 领域分析, research landscape, literature review.
+
+### Interaction Flow
+
+The entire process consists of **5 human confirmation points + fully automatic stages**:
+
+```
+You: "Analyze the trend of hierarchical reinforcement learning"
+     │
+     ▼
 ┌─────────────────────────────────────┐
-│ Stage 0: 环境探测 + 模式选择          │
-│ Agent 检测 BM25 / Milvus 可用性      │
-│ ⛔ 展示四合一组合选择，等待你确认      │
-│   BM25/Milvus × 标准/快速            │
+│ Stage 0: Environment Probe + Mode    │
+│ Selection                           │
+│ Agent detects BM25 / Milvus          │
+│ availability                        │
+│ ⛔ Presents 4-in-1 combo selection,  │
+│   waits for confirmation             │
+│   BM25/Milvus × Standard/Fast        │
 └─────────────────┬───────────────────┘
                   ▼
-           选择 Milvus？
+           Choose Milvus?
 ┌─────────────────┬───────────────────┐
-│ 是              │ 否                │
-│ ⛔ 确认嵌入模型  │                   │
-│    和数据路径    │                   │
+│ Yes             │ No                │
+│ ⛔ Confirm       │                   │
+│   embedding      │                   │
+│   model & path   │                   │
 └────────┬────────┘                   │
          ▼                            ▼
 ┌─────────────────────────────────────┐
-│ Stage 1: 需求解析                    │
-│ 标准模式 → 5 层苏格拉底对话           │
-│ 快速模式 → 1-2 轮澄清               │
-│ Agent 网络搜索 → 展开对话/提问       │
-│ ⛔ 生成 demand.json，等你确认"继续"   │
+│ Stage 1: Requirement Analysis        │
+│ Standard → 5-layer Socratic dialogue │
+│ Fast → 1-2 rounds of clarification  │
+│ Agent web search → dialogue/Q&A     │
+│ ⛔ Generates demand.json, waits      │
+│   for "continue" confirmation       │
 └─────────────────┬───────────────────┘
                   ▼
 ┌─────────────────────────────────────┐
-│ Stage 2-8: 全自动执行                │
-│ 搜索 → 存储 → 筛选 → 补充 → 分级     │
-│ → Prompt → 撰写 → 保存              │
-│ 每步完成后展示结果，无需等待          │
+│ Stage 2-8: Fully Automatic           │
+│ Search → Store → Filter → Supplement │
+│ → Grade → Prompt → Write → Save     │
+│ Results shown after each step,       │
+│ no waiting required                  │
 └─────────────────┬───────────────────┘
                   ▼
 ┌─────────────────────────────────────┐
-│ 报告完成后                           │
-│ ⛔ 你可要求修订（max 2 轮）           │
+│ After report generation              │
+│ ⛔ You can request revisions          │
+│   (max 2 rounds)                    │
 └─────────────────┬───────────────────┘
                   ▼
-           输出 report.md
+           Output: report.md
 ```
 
-你可以随时说"继续执行完"，让 Agent 一次性跑完剩余阶段。
+You can say "continue to the end" at any time to let the Agent run all remaining stages in one go.
 
 ---
 
-## 技术 Pipeline
+## Technical Pipeline
 
-后端自动执行的 8 个阶段 + 可选修订循环：
+8 automatically executed backend stages + optional revision loop:
 
-| Stage | 动作 | 输出 | 交互 |
-|-------|------|------|------|
-| 0 | 环境探测 + 模式选择 | 四合一组合选择 | ⛔ 检索模式(BM25/Milvus) + 对话模式(标准/快速) |
-| — | Milvus 路径确认（仅 Milvus） | 嵌入模型 + 数据路径 | ⛔ 确认环境变量或询问用户 |
-| 1 | 需求解析（标准模式 5 层对话 / 快速 1-2 轮 + 缺口分析） | `demand.json` | ⛔ 需求确认 |
-| 2 | 四源论文搜索（arXiv / Semantic Scholar / OpenAlex / AlphaXiv） | `paper_pre_list.json` | 自动 |
-| 3 | 摘要存储（BM25 JSON 或 Milvus 向量入库） | `abstracts.json` | 自动 |
-| 4 | 核心论文筛选（BM25 相关性 + 标题加权） | `core_papers.json` | 自动 |
-| 5 | 补充论文检索（多关键词 RRF 融合） | `supplement_papers.json` | 自动 |
-| 5.5 | 文献质量分级（T1 顶会 / T2 预印本 / T3 待核实） | `quality_tiers.json` | 自动 |
-| 6 | 构建报告 Prompt | `report_prompt.md` | 自动 |
-| 7 | Agent 按模板撰写报告 | `report_draft.md` | 自动 |
-| 8 | 提取引用 + 重映射编号 + GB/T 7714 参考文献 | `report.md` | 自动 |
-| — | 报告修订（用户触发，max 2 轮） | `report.md`（修订） | ⛔ 收集修改意见 → 重跑 Stage 6-8 |
+| Stage | Action                                                                              | Output                      | Interaction                                                    |
+| ----- | ----------------------------------------------------------------------------------- | --------------------------- | -------------------------------------------------------------- |
+| 0     | Environment probe + mode selection                                                  | 4-in-1 combo selection      | ⛔ Retrieval mode (BM25/Milvus) + dialogue mode (Standard/Fast) |
+| —     | Milvus path confirmation (Milvus only)                                              | Embedding model + data path | ⛔ Confirm env vars or ask user                                 |
+| 1     | Requirement analysis (Standard: 5-layer dialogue / Fast: 1-2 rounds + gap analysis) | `demand.json`               | ⛔ Requirement confirmation                                     |
+| 2     | Four-source paper search (arXiv / Semantic Scholar / OpenAlex / AlphaXiv)           | `paper_pre_list.json`       | Auto                                                           |
+| 3     | Abstract storage (BM25 JSON or Milvus vector indexing)                              | `abstracts.json`            | Auto                                                           |
+| 4     | Core paper filtering (BM25 relevance + title weighting)                             | `core_papers.json`          | Auto                                                           |
+| 5     | Supplemental paper search (multi-keyword RRF fusion)                                | `supplement_papers.json`    | Auto                                                           |
+| 5.5   | Paper quality grading (T1 top conference / T2 preprint / T3 pending verification)   | `quality_tiers.json`        | Auto                                                           |
+| 6     | Build report prompt                                                                 | `report_prompt.md`          | Auto                                                           |
+| 7     | Agent writes report following template                                              | `report_draft.md`           | Auto                                                           |
+| 8     | Extract citations + re-map numbering + GB/T 7714 references                         | `report.md`                 | Auto                                                           |
+| —     | Report revision (user-triggered, max 2 rounds)                                      | `report.md` (revised)       | ⛔ Collect feedback → re-run Stage 6-8                          |
 
-所有中间产物保存在 `data/YYYY-MM-DD-HH-MM-主题/` 目录下（如 `data/2026-06-04-12-00-hierarchical-reinforcement/`），每次运行自动隔离，方便回溯和对比。
-
----
-
-## 两种检索模式 + 两种对话模式
-
-### 检索模式
-
-| 模式 | 依赖 | 特点 | 适用场景 |
-|------|------|------|---------|
-| **BM25**（默认） | `requests` | 零配置、毫秒级、基于关键词匹配 | 快速验证、首次使用、无 GPU 环境 |
-| **Milvus** | `pymilvus` + `sentence-transformers` | 语义召回、BGE 向量相似度 | 追求最高检索质量、有本地向量库 |
-
-> BM25 对学术论文摘要的检索效果与轻量向量检索相当，推荐默认使用。仅在需要深度语义召回时切换到 Milvus。
-
-### 对话模式
-
-| 模式 | 交互深度 | 特点 | 适用场景 |
-|------|---------|------|---------|
-| **标准模式** | 5 层苏格拉底对话 | 范围界定 → 维度选择 → 证据标准 → 偏差意识 → 贡献阐述 | 需求模糊、希望深度澄清 |
-| **快速模式** | 1-2 轮快速澄清 | 直接 WebSearch + 简洁提问 | 已有明确分析目标 |
-
-> Stage 0 中两个模式组合为四选一：`BM25+标准`、`BM25+快速`、`Milvus+标准`、`Milvus+快速`。
-
-### Milvus 模式额外配置
-
-选择 Milvus 模式时，需确认以下两项：
-
-1. **嵌入模型路径**：优先读取环境变量 `MILVUS_EMBEDDING_MODEL`，未设置时由 Agent 询问你提供
-2. **数据库保存路径**：优先读取环境变量 `MILVUS_DATA_PATH`，未设置时由 Agent 询问你提供
-
-两个路径会写入 `demand.json`，后续 Stage 自动读取，无需重复指定。
-
-推荐模型： [BAAI/bge-large-zh-v1.5](https://huggingface.co/BAAI/bge-large-zh-v1.5)（1024 维）。
-
-> **Windows 用户注意**：如果 `python` 或 `pip` 不在 PATH 中，请使用 `python -m pip install ...` 或在 Anaconda/Miniconda 环境中安装。本 Skill 开发环境为 `conda activate agno`，但不强制依赖 conda。
+All intermediate artifacts are saved under `data/YYYY-MM-DD-HH-MM-topic/` (e.g., `data/2026-06-04-12-00-hierarchical-reinforcement/`). Each run is automatically isolated for easy回溯 and comparison.
 
 ---
 
-## 项目结构
+## Two Retrieval Modes + Two Dialogue Modes
+
+### Retrieval Modes
+
+| Mode               | Dependencies                         | Features                                               | Use Case                                                      |
+| ------------------ | ------------------------------------ | ------------------------------------------------------ | ------------------------------------------------------------- |
+| **BM25** (default) | `requests`                           | Zero-config, millisecond-speed, keyword-based matching | Quick validation, first-time use, no GPU environment          |
+| **Milvus**         | `pymilvus` + `sentence-transformers` | Semantic recall, BGE vector similarity                 | Pursuing highest retrieval quality, local vector DB available |
+
+> BM25 retrieval on academic paper abstracts performs comparably to lightweight vector retrieval — recommended as the default. Switch to Milvus only when deep semantic recall is needed.
+
+### Dialogue Modes
+
+| Mode         | Interaction Depth                 | Features                                                                             | Use Case                                          |
+| ------------ | --------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| **Standard** | 5-layer Socratic dialogue         | Scope → Dimensions → Evidence Standards → Bias Awareness → Contribution Articulation | Vague requirements, desire for deep clarification |
+| **Fast**     | 1-2 rounds of quick clarification | Direct WebSearch + concise prompts                                                   | Already have a clear analysis target              |
+
+> In Stage 0, the two modes combine into four options: `BM25+Standard`, `BM25+Fast`, `Milvus+Standard`, `Milvus+Fast`.
+
+### Additional Milvus Configuration
+
+When choosing Milvus mode, confirm the following:
+
+1. **Embedding model path**: Reads environment variable `MILVUS_EMBEDDING_MODEL` first; if not set, the Agent asks you to provide it
+2. **Database save path**: Reads environment variable `MILVUS_DATA_PATH` first; if not set, the Agent asks you to provide it
+
+Both paths are written into `demand.json` and automatically read in subsequent stages — no need to specify them again.
+
+Recommended model: [BAAI/bge-large-zh-v1.5](https://huggingface.co/BAAI/bge-large-zh-v1.5) (1024 dimensions).
+
+> **Windows users**: If `python` or `pip` is not in your PATH, use `python -m pip install ...` or install within an Anaconda/Miniconda environment. This Skill was developed in a `conda activate agno` environment but does not强制 require conda.
+
+---
+
+## Project Structure
 
 ```
 academic-trend-analysis/
-├── SKILL.md                    # Skill 定义与完整使用文档
-├── agents/                     # Agent 指令
-│   ├── mode_selector.md        # 模式选择器（Stage 0，四合一组合选择）
-│   ├── demand_analyzer.md      # 需求分析师（Stage 1，含 5 层苏格拉底对话）
-│   ├── paper_searcher.md       # 论文搜索员（Stage 2）
-│   ├── knowledge_manager.md    # 知识管理员（Stage 3-5）
-│   └── trend_reporter.md       # 趋势报告员（Stage 6-8 + 报告修订）
-├── lib/                        # 自包含代码库
-│   ├── paper_search.py         # 多源搜索 + 去重 + 关键词扩展
-│   ├── paper_retrieval.py      # BM25/Milvus 检索 + 摘要存储
-│   └── report_builder.py       # Prompt 构建 + 报告保存
-├── scripts/                    # Stage 0-8 可执行脚本（由 Agent 自动调用）
-├── references/                 # 流程参考文档
-├── templates/                  # 报告生成模板
-└── examples/                   # 完整执行示例
+├── SKILL.md                    # Skill definition and complete usage documentation
+├── agents/                     # Agent instructions
+│   ├── mode_selector.md        # Mode selector (Stage 0, 4-in-1 combo selection)
+│   ├── demand_analyzer.md      # Demand analyzer (Stage 1, with 5-layer Socratic dialogue)
+│   ├── paper_searcher.md       # Paper searcher (Stage 2)
+│   ├── knowledge_manager.md    # Knowledge manager (Stage 3-5)
+│   └── trend_reporter.md       # Trend reporter (Stage 6-8 + report revision)
+├── lib/                        # Self-contained code library
+│   ├── paper_search.py         # Multi-source search + deduplication + keyword expansion
+│   ├── paper_retrieval.py      # BM25/Milvus retrieval + abstract storage
+│   └── report_builder.py       # Prompt building + report saving
+├── scripts/                    # Stage 0-8 executable scripts (auto-called by Agent)
+├── references/                 # Process reference documents
+├── templates/                  # Report generation templates
+└── examples/                   # Complete execution examples
 ```
 
 ---
 
-## 依赖
+## Dependencies
 
-Python 3.10+ 环境。依赖按模式分离，按需安装：
+Python 3.10+ environment. Dependencies are separated by mode — install only what you need:
 
-### BM25 模式（默认，零配置）
+### BM25 Mode (default, zero-config)
 
-仅需 `requests`，使用关键词 BM25 匹配，适合大多数场景：
+Only requires `requests`, uses keyword BM25 matching, suitable for most scenarios:
 
 ```bash
 pip install -r academic-trend-analysis/requirements.txt
-# 或单独安装: pip install requests
+# Or install individually: pip install requests
 ```
 
-### Milvus 向量检索模式（可选）
+### Milvus Vector Retrieval Mode (optional)
 
-需要额外的向量检索依赖，适合追求深度语义召回的场景：
+Requires additional vector retrieval dependencies, suitable for scenarios pursuing deep semantic recall:
 
 ```bash
 pip install pymilvus sentence-transformers
 ```
 
-**嵌入模型路径**和**数据库保存路径**：
-选择 Milvus 模式时，Agent 会在 Stage 0 引导你确认：
-- 优先读取环境变量 `MILVUS_EMBEDDING_MODEL` / `MILVUS_DATA_PATH`
-- 未设置时，Agent 会交互式询问你提供路径
-- 确认后路径写入 `demand.json`，后续 Stage 自动读取
+**Embedding model path** and **database save path**:
+When selecting Milvus mode, the Agent guides you to confirm in Stage 0:
+- First reads environment variables `MILVUS_EMBEDDING_MODEL` / `MILVUS_DATA_PATH`
+- If not set, the Agent interactively asks you to provide the paths
+- After confirmation, paths are written to `demand.json` and automatically read in subsequent stages
 
-也可通过环境变量预设：
+You can also preset via environment variables:
 
 ```bash
 # Linux / macOS
@@ -353,7 +362,7 @@ set MILVUS_EMBEDDING_MODEL=C:\models\bge-large-zh-v1.5
 set MILVUS_DATA_PATH=C:\milvus_data
 ```
 
-推荐模型：[BAAI/bge-large-zh-v1.5](https://huggingface.co/BAAI/bge-large-zh-v1.5)（1024 维）
+Recommended model: [BAAI/bge-large-zh-v1.5](https://huggingface.co/BAAI/bge-large-zh-v1.5) (1024 dimensions)
 
 ---
 
