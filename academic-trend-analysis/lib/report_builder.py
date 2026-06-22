@@ -217,6 +217,11 @@ def build_trend_prompt(user_query: str, core_papers: List[Dict],
         lines.append(f"**时间范围**: {date_range}")
     if core_concepts:
         lines.append(f"**该领域核心研究方向**（供聚类参考）：{', '.join(core_concepts)}")
+    # 添加网络搜索摘要作为参考资料
+    web_summary = demand.get("web_summary", "")
+    if web_summary:
+        lines.append("**参考资料**（领域背景调研，可融入报告各章节）：")
+        lines.append(f"{web_summary}")
     lines.append("")
 
     # 报告模板 — 放在最前面确保 LLM 注意
@@ -277,7 +282,7 @@ def build_trend_prompt(user_query: str, core_papers: List[Dict],
         lines.append(f"摘要: {summary}")
         lines.append("─" * 60)
 
-    # 补充论文（仅标题）
+    # 补充论文（含摘要前 200 字）
     offset = len(core_papers)
     for i, paper in enumerate(supplement_papers, 1):
         idx = offset + i
@@ -301,6 +306,12 @@ def build_trend_prompt(user_query: str, core_papers: List[Dict],
         lines.append(f"## [{idx}] {title}{venue_info}{rrf_info}")
         lines.append(f"作者: {author_str}")
         lines.append(f"发表时间: {published}")
+
+        # 添加摘要（至少前 200 字）
+        summary = paper.get("summary", paper.get("content", ""))
+        if summary:
+            summary_preview = summary[:200] + "..." if len(summary) > 200 else summary
+            lines.append(f"摘要: {summary_preview}")
 
     lines.append("")
     lines.append("请生成趋势总结报告:")

@@ -522,7 +522,7 @@ class MilvusStore:
 
         search_filter = "chunk_index == 0 and content_type == 'abstract_only'"
         output_fields = ["chunk_index", "file_name", "normalized_title",
-                         "authors", "published", "source", "entry_id", "venue"]
+                         "authors", "published", "source", "entry_id", "venue", "content"]
 
         rrf_scores = defaultdict(float)
         paper_data = {}
@@ -566,6 +566,7 @@ class MilvusStore:
                             "source": entity.get("source", ""),
                             "venue": entity.get("venue", ""),
                             "entry_id": entity.get("entry_id", ""),
+                            "summary": entity.get("content", ""),
                             "_dist": score,
                         }
 
@@ -649,6 +650,7 @@ class MilvusRetriever:
                         "source": entity.get("source", ""),
                         "venue": entity.get("venue", ""),
                         "entry_id": entity.get("entry_id", ""),
+                        "summary": entity.get("content", ""),
                         "_dist": score,
                     }
 
