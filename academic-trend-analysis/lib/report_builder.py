@@ -23,6 +23,27 @@ _TOP_VENUES = {
 }
 
 
+def _truncate_summary(text: str, max_cn: int = 200, max_en: int = 120) -> str:
+    """按语言感知截取摘要：中文按字符数截取，英文按单词数截取"""
+    if not text:
+        return ""
+    # 检测中文字符占比
+    cn_count = sum(1 for c in text if '一' <= c <= '鿿')
+    alpha_count = sum(1 for c in text if c.isascii() and c.isalpha())
+
+    if cn_count > alpha_count:
+        # 中文为主，按字符截取
+        if len(text) > max_cn:
+            return text[:max_cn] + "..."
+        return text
+    else:
+        # 英文为主，按单词截取
+        words = text.split()
+        if len(words) > max_en:
+            return ' '.join(words[:max_en]) + "..."
+        return text
+
+
 def _get_venue_tier(venue_or_source: str) -> str:
     if not venue_or_source:
         return ""
@@ -307,10 +328,10 @@ def build_trend_prompt(user_query: str, core_papers: List[Dict],
         lines.append(f"作者: {author_str}")
         lines.append(f"发表时间: {published}")
 
-        # 添加摘要（至少前 200 字）
+        # 添加摘要（中文按 200 字，英文按 120 词截取，语义量等价）
         summary = paper.get("summary", paper.get("content", ""))
         if summary:
-            summary_preview = summary[:200] + "..." if len(summary) > 200 else summary
+            summary_preview = _truncate_summary(summary, max_cn=200, max_en=120)
             lines.append(f"摘要: {summary_preview}")
 
     lines.append("")
