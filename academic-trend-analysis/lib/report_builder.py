@@ -87,7 +87,18 @@ def _format_bibliography_entry(number: int, paper: Dict) -> str:
         author_str = ", ".join(str(a) for a in authors[:3]) + ", 等"
 
     year = published[:4] if published and len(published) >= 4 else "n.d."
-    source_info = venue if venue else (source if source else "arXiv preprint")
+
+    # 改进的 venue 逻辑：不再默认写 "arXiv preprint"
+    # 优先使用 venue，其次根据 entry_id 判断是否为 arXiv
+    invalid_venues = {"arxiv preprint", "arxiv", "来源待核实", ""}
+    if venue and venue.lower().strip() not in invalid_venues:
+        source_info = venue
+    elif entry_id and entry_id.startswith("arxiv:"):
+        source_info = "arXiv preprint"
+    elif source and source.lower() not in invalid_venues:
+        source_info = source
+    else:
+        source_info = "来源待核实"
 
     url_suffix = ""
     if entry_id and entry_id.startswith("arxiv:"):

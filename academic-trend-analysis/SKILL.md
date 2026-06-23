@@ -79,6 +79,7 @@ Stage 0/1 含交互检查点（⛔），Stage 2-8 自动执行，每步完成后
 | 1 | 需求解析 (+Socratic) |agent + `scripts/stage1_demand.py` | `demand.json`（含 `mode` + `dialogue_mode`） | ⛔ 5 层对话 → WebSearch 补充 + 确认 |
 | 2 | 论文搜索 | `scripts/stage2_search.py` | `paper_pre_list.json` | 自动 → 展示结果 |
 | 3 | 摘要存储 | `scripts/stage3_store.py` | `abstracts.json` | 自动 → 展示结果 |
+| 3.5 | 论文来源核实 | `scripts/stage3_5_venue_verify.py` + Agent WebSearch | `abstracts.json`(更新) + `venue_verification_report.json` + `papers_needing_web_search.json` | 自动 API → Agent 网络搜索 → 展示结果 |
 | 4 | 核心论文筛选 | `scripts/stage4_select.py` | `core_papers.json` | 自动 → 展示结果 |
 | 5 | 补充论文检索 | `scripts/stage5_supplement.py` | `supplement_papers.json` | 自动 → 展示结果 |
 | 5.5 | 文献质量分级 | `scripts/stage5_5_quality_tier.py` | `quality_tiers.json` | 自动 → 展示结果 |
@@ -132,6 +133,7 @@ START
 | 0 | `mode_selector` | 模式选择器（前置） | [`agents/mode_selector.md`](agents/mode_selector.md) |
 | 1 | `demand_analyzer` | 需求分析师 | [`agents/demand_analyzer.md`](agents/demand_analyzer.md) |
 | 2 | `paper_searcher` | 论文搜索员 | [`agents/paper_searcher.md`](agents/paper_searcher.md) |
+| 2.5 | `venue_verifier` | 论文来源核实员 | [`agents/venue_verifier.md`](agents/venue_verifier.md) |
 | 3 | `knowledge_manager` | 知识管理员 | [`agents/knowledge_manager.md`](agents/knowledge_manager.md) |
 | 4 | `trend_reporter` | 趋势报告员 | [`agents/trend_reporter.md`](agents/trend_reporter.md) |
 
@@ -237,6 +239,36 @@ python academic-trend-analysis/scripts/stage3_store.py <data_dir>
 **自动从 `demand.json.mode` 读取模式**，无需再传 `--mode`。
 BM25 模式使用 JSON 文件存储；Milvus 模式需要 `pymilvus` + `sentence-transformers`。
 如需临时覆盖：`python academic-trend-analysis/scripts/stage3_store.py <data_dir> --mode milvus`。
+
+### Stage 3.5: 论文来源核实（自动 API + Agent 网络搜索）
+
+**阶段 A：Crossref API 核实**
+
+```bash
+python academic-trend-analysis/scripts/stage3_5_venue_verify.py <data_dir>
+```
+
+通过 Crossref DOI 查询核实论文的正式发表信息：
+- 有 DOI 的论文：自动查询 Crossref，提取 venue（会议/期刊名称）
+- 无 DOI 或查询失败的论文：标记为待网络搜索复核
+
+输出：
+- `abstracts.json`（更新 venue 字段）
+- `venue_verification_report.json`（核实统计）
+- `papers_needing_web_search.json`（待网络搜索复核的论文列表）
+
+**阶段 B：Agent 网络搜索复核**
+
+如果存在 `papers_needing_web_search.json`，Agent 需要：
+
+1. 读取待复核论文列表
+2. 对每篇论文使用 **WebSearch** 搜索：`"{论文标题}" {作者} {年份} published venue`
+3. 分析搜索结果，判断是否已正式发表
+4. 更新 `abstracts.json` 中的 venue 字段
+
+详见 [`agents/venue_verifier.md`](agents/venue_verifier.md)
+
+完成后向用户展示：API 核实数量 + 网络搜索核实数量 + 未核实数量
 
 ### Stage 4: 核心论文筛选（自动执行 → 完成后展示结果）
 
@@ -411,6 +443,7 @@ academic-trend-analysis/
 │   ├── mode_selector.md              # 模式选择器（Stage 0 前置）
 │   ├── demand_analyzer.md            # 需求分析师
 │   ├── paper_searcher.md             # 论文搜索员
+│   ├── venue_verifier.md             # 论文来源核实员（Stage 3.5）
 │   ├── knowledge_manager.md          # 知识管理员
 │   └── trend_reporter.md             # 趋势报告员
 ├── lib/                              # 自包含代码库
@@ -418,6 +451,7 @@ academic-trend-analysis/
 │   ├── demand_analyzer.py            # 需求分析逻辑（含苏格拉底对话辅助）
 │   ├── paper_search.py               # 多源搜索 + 去重 + 关键词扩展
 │   ├── paper_retrieval.py            # BM25/Milvus 检索 + 摘要存储
+│   ├── venue_verifier.py             # 论文来源核实（Crossref API）
 │   └── report_builder.py             # Prompt 构建 + 报告保存
 ├── scripts/
 │   ├── stage0_mode.py                # Stage 0: 环境探测 + 模式推荐
@@ -426,6 +460,7 @@ academic-trend-analysis/
 │   ├── stage1_demand.py              # Stage 1: 需求解析（写入 mode）
 │   ├── stage2_search.py              # Stage 2: 论文搜索 + 去重
 │   ├── stage3_store.py               # Stage 3: 摘要入库（自动读 mode）
+│   ├── stage3_5_venue_verify.py      # Stage 3.5: 论文来源核实（Crossref API）
 │   ├── stage4_select.py              # Stage 4: 核心论文筛选（自动读 mode）
 │   ├── stage5_supplement.py          # Stage 5: 补充论文 RRF 检索（自动读 mode）
 │   ├── stage5_5_quality_tier.py      # Stage 5.5: 文献质量分级（T1/T2/T3）
