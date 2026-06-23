@@ -246,6 +246,7 @@ X 方向的研究动态
 | 1 | 需求解析（标准模式 5 层对话 / 快速 1-2 轮 + 缺口分析） | `demand.json` | ⛔ 需求确认 |
 | 2 | 四源论文搜索（arXiv / Semantic Scholar / OpenAlex / AlphaXiv） | `paper_pre_list.json` | 自动 |
 | 3 | 摘要存储（BM25 JSON 或 Milvus 向量入库） | `abstracts.json` | 自动 |
+| 3.5 | 论文来源核实（Crossref API + Agent 网络搜索复核） | `abstracts.json`(更新) + `venue_verification_report.json` | 自动 → Agent 网络搜索 → 展示结果 |
 | 4 | 核心论文筛选（BM25 相关性 + 标题加权） | `core_papers.json` | 自动 |
 | 5 | 补充论文检索（多关键词 RRF 融合） | `supplement_papers.json` | 自动 |
 | 5.5 | 文献质量分级（T1 顶会 / T2 预印本 / T3 待核实） | `quality_tiers.json` | 自动 |
@@ -302,11 +303,13 @@ academic-trend-analysis/
 │   ├── mode_selector.md        # 模式选择器（Stage 0，四合一组合选择）
 │   ├── demand_analyzer.md      # 需求分析师（Stage 1，含 5 层苏格拉底对话）
 │   ├── paper_searcher.md       # 论文搜索员（Stage 2）
+│   ├── venue_verifier.md       # 论文来源核实员（Stage 3.5）
 │   ├── knowledge_manager.md    # 知识管理员（Stage 3-5）
 │   └── trend_reporter.md       # 趋势报告员（Stage 6-8 + 报告修订）
 ├── lib/                        # 自包含代码库
 │   ├── paper_search.py         # 多源搜索 + 去重 + 关键词扩展
 │   ├── paper_retrieval.py      # BM25/Milvus 检索 + 摘要存储
+│   ├── venue_verifier.py       # 论文来源核实（Crossref API）
 │   └── report_builder.py       # Prompt 构建 + 报告保存
 ├── scripts/                    # Stage 0-8 可执行脚本（由 Agent 自动调用）
 ├── references/                 # 流程参考文档

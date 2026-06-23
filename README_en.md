@@ -253,6 +253,7 @@ You can say "continue to the end" at any time to let the Agent run all remaining
 | 1     | Requirement analysis (Standard: 5-layer dialogue / Fast: 1-2 rounds + gap analysis) | `demand.json`               | ⛔ Requirement confirmation                                     |
 | 2     | Four-source paper search (arXiv / Semantic Scholar / OpenAlex / AlphaXiv)           | `paper_pre_list.json`       | Auto                                                           |
 | 3     | Abstract storage (BM25 JSON or Milvus vector indexing)                              | `abstracts.json`            | Auto                                                           |
+| 3.5   | Venue verification (Crossref API + Agent web search review)                         | `abstracts.json`(updated) + `venue_verification_report.json` | Auto → Agent web search → display results                     |
 | 4     | Core paper filtering (BM25 relevance + title weighting)                             | `core_papers.json`          | Auto                                                           |
 | 5     | Supplemental paper search (multi-keyword RRF fusion)                                | `supplement_papers.json`    | Auto                                                           |
 | 5.5   | Paper quality grading (T1 top conference / T2 preprint / T3 pending verification)   | `quality_tiers.json`        | Auto                                                           |
@@ -309,11 +310,13 @@ academic-trend-analysis/
 │   ├── mode_selector.md        # Mode selector (Stage 0, 4-in-1 combo selection)
 │   ├── demand_analyzer.md      # Demand analyzer (Stage 1, with 5-layer Socratic dialogue)
 │   ├── paper_searcher.md       # Paper searcher (Stage 2)
+│   ├── venue_verifier.md       # Venue verifier (Stage 3.5)
 │   ├── knowledge_manager.md    # Knowledge manager (Stage 3-5)
 │   └── trend_reporter.md       # Trend reporter (Stage 6-8 + report revision)
 ├── lib/                        # Self-contained code library
 │   ├── paper_search.py         # Multi-source search + deduplication + keyword expansion
 │   ├── paper_retrieval.py      # BM25/Milvus retrieval + abstract storage
+│   ├── venue_verifier.py       # Venue verification (Crossref API)
 │   └── report_builder.py       # Prompt building + report saving
 ├── scripts/                    # Stage 0-8 executable scripts (auto-called by Agent)
 ├── references/                 # Process reference documents
